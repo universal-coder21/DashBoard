@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>21x7 Task Tracker</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+      width: 50px;
+      height: 80px;
+    }
+    .day-label {
+      font-size: 0.9em;
+      color: #333;
+    }
+    .custom-checkbox {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+    }
+    .bg-primary {
+      background-color: #007bff !important;
+      color: white;
+    }
+    .bg-secondary {
+      background-color: #6c757d !important;
+      color: white;
+    }
+    .bg-light {
+      background-color: #f8f9fa !important;
+    }
+    .bg-dark {
+      background-color: #343a40 !important;
+      color: white;
+    }
+    .bg-success {
+      background-color: #28a745 !important;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">21x7 Task Tracker</h1>
+    <table class="table table-bordered">
+      <thead class="thead-dark">
+        <tr>
+          <th>Sun</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Generating 21 rows with 7 columns each -->
+        <!-- Using JS to dynamically generate rows and cells -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Bootstrap and jQuery JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      const tbody = $('tbody');
+      let dayCounter = 1;
+      for (let i = 0; i < 21; i++) {
+        const row = $('<tr>');
+        for (let j = 0; j < 7; j++) {
+          const cell = $('<td>').addClass(dayCounter % 2 === 0 ? 'bg-light' : 'bg-secondary').css('cursor', 'pointer');
+          const label = $('<div>').addClass('day-label').text('DAY ' + dayCounter);
+          const checkbox = $('<input>', {
+            type: 'checkbox',
+            class: 'custom-checkbox'
+          });
+          cell.append(label).append(checkbox);
+          row.append(cell);
+
+          // Add event listener to toggle the checkbox and background color when the cell is clicked
+          cell.on('click', function() {
+            checkbox.prop('checked', !checkbox.prop('checked'));
+            if (checkbox.prop('checked')) {
+              cell.removeClass('bg-light bg-secondary').addClass('bg-success');
+            } else {
+              cell.removeClass('bg-success').addClass(dayCounter % 2 === 0 ? 'bg-light' : 'bg-secondary');
+            }
+          });
+
+          dayCounter++;
+        }
+        tbody.append(row);
+      }
+    });
+  </script>
+</body>
+</html>

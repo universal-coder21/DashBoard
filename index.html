@@ -10,10 +10,10 @@
             background-color: #f8f9fa;
         }
         .welcome-section {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             padding: 100px 0;
             text-align: center;
+            transition: background 0.3s ease;
         }
         .welcome-section h1 {
             font-size: 3rem;
@@ -40,12 +40,17 @@
 <body>
     <header class="welcome-section">
         <div class="container">
-            <h1>Welcome to Our Website</h1>
+            <h1>Welcome to My Website</h1>
             <p>Explore the options below to get started</p>
             <div class="link-section">
-                <a href="index1.html" class="btn btn-primary">Link 1</a>
-                <a href="index2.html" class="btn btn-success">Link 2</a>
-                <a href="index3.html" class="btn btn-danger">Link 3</a>
+                <a href="https://universal-coder21.github.io/DashBoard/index3.html" class="btn btn-primary">Daily Planner</a>
+                <a href="https://universal-coder21.github.io/DashBoard/index2.html" class="btn btn-success">Diagram</a>
+                <a href="https://universal-coder21.github.io/DashBoard/" class="btn btn-danger">Mini Diary</a>
+            </div>
+            <div class="color-options">
+                <button class="btn btn-info" onclick="changeColor('#6a11cb', '#2575fc')">Color 1</button>
+                <button class="btn btn-warning" onclick="changeColor('#ff9800', '#ff5722')">Color 2</button>
+                <button class="btn btn-secondary" onclick="changeColor('#009688', '#004d40')">Color 3</button>
             </div>
         </div>
     </header>
@@ -56,5 +61,25 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Function to change the background color and store it in localStorage
+        function changeColor(color1, color2) {
+            const gradient = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+            document.querySelector('.welcome-section').style.background = gradient;
+            localStorage.setItem('welcomeColor', gradient);  // Save to localStorage
+        }
+
+        // On page load, check if a background color is stored in localStorage and apply it
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedColor = localStorage.getItem('welcomeColor');
+            if (storedColor) {
+                document.querySelector('.welcome-section').style.background = storedColor;
+            } else {
+                // Default gradient
+                changeColor('#6a11cb', '#2575fc');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>80-Day Planner</title>
+  <title>80-Day Planner with Growth/Downfall Chart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -26,11 +26,21 @@
       padding: 20px;
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
     }
 
     .day-container:hover {
       transform: scale(1.02);
-      transition: 0.3s ease-in-out;
+    }
+
+    .fulfilled {
+      background-color: green;
+      color: white;
+    }
+
+    .crossed-day {
+      background-color: red;
+      color: white;
     }
 
     .form-check-label {
@@ -74,98 +84,212 @@
         <!-- Days will be dynamically generated here -->
       </div>
     </div>
+
+    <canvas id="growthChart" class="mt-5"></canvas>
   </div>
-  <div class="d-flex justify-content-center align-items-center p-3 " style=" background: linear-gradient(135deg, #ff7e5f, #feb47b);color: white; /* Text color */
-      border-radius: 15px; /* Rounded corners */
-      padding: 20px; /* Padding inside the div */
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
-      text-align: center"><b><i>Sudip Samanta</i></b></div>
 
-  <script>
-    // Function to generate a list of 80 days starting from today
-    function generateDays() {
-      const daysContainer = document.getElementById('daysContainer');
-      const days = 80;
-      const today = new Date();
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-      for (let i = 0; i < days; i++) {
-        const dayDate = new Date(today);
-        dayDate.setDate(today.getDate() + i);
         const formattedDate = dayDate.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        const dayId = `day-${i + 1}`;
-        const noteId = `note-day-${i + 1}`;
+<script>
+  let dayData = JSON.parse(localStorage.getItem('dayData')) || [];
+  let chartInstance = null;
 
-        const dayContainer = `
-          <div class="day-container">
-            <div class="form-check mb-3">
-              <input class="form-check-input day-checkbox" type="checkbox" id="${dayId}" onchange="toggleStrikethrough(${i + 1})">
-              <label class="form-check-label" for="${dayId}" id="label-${i + 1}">
-                <i class="fa fa-check-circle me-2"></i>Day ${i + 1} - ${formattedDate}
-              </label>
-            </div>
-            <div class="mb-3">
-              <i class="fa fa-sticky-note me-2"></i>
-              <textarea class="form-control note" id="${noteId}" placeholder="Add your notes for Day ${i + 1}"></textarea>
-            </div>
+  function generateDays() {
+    const daysContainer = document.getElementById('daysContainer');
+    const days = 80;
+    const today = new Date();
+
+    for (let i = 0; i < days; i++) {
+      const dayDate = new Date(today);
+      dayDate.setDate(today.getDate() + i);
+      const formattedDate = dayDate.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+
+      const dayId = `day-${i + 1}`;
+      const noteId = `note-day-${i + 1}`;
+
+      const dayContainer = `
+        <div class="day-container" id="container-${i + 1}">
+          <div class="form-check mb-3">
+            <input class="form-check-input day-checkbox" type="checkbox" id="${dayId}" 
+              onchange="toggleFulfillment(${i + 1})" ondblclick="toggleCross(${i + 1})">
+            <label class="form-check-label" for="${dayId}" id="label-${i + 1}">
+              <i class="fa fa-check-circle me-2"></i>Day ${i + 1} - ${formattedDate}
+            </label>
           </div>
-        `;
+          <div class="mb-3">
+            <i class="fa fa-sticky-note me-2"></i>
+            <textarea class="form-control note" id="${noteId}" placeholder="Add your notes for Day ${i + 1}"></textarea>
+          </div>
+        </div>
+      `;
 
-        daysContainer.insertAdjacentHTML('beforeend', dayContainer);
+      daysContainer.insertAdjacentHTML('beforeend', dayContainer);
+
+      if (dayData[i]) {
+        document.getElementById(noteId).value = dayData[i].note || '';
+        const checkbox = document.getElementById(dayId);
+        const dayContainer = document.getElementById(`container-${i + 1}`);
+        const label = document.getElementById(`label-${i + 1}`);
+
+        if (dayData[i].fulfilled) {
+          checkbox.checked = true;
+          label.classList.add('strikethrough');
+          dayContainer.classList.add('fulfilled');
+        } else if (dayData[i].crossed) {
+          label.classList.add('crossed-day');
+          dayContainer.classList.add('crossed-day');
+        }
+      }
+
+      if (!dayData[i]) {
+        dayData[i] = {
+          id: i + 1,
+          fulfilled: false,
+          crossed: false,
+          note: ''
+        };
       }
     }
 
-    // Function to toggle strikethrough on checkbox check
-    function toggleStrikethrough(day) {
-      const label = document.getElementById(`label-${day}`);
-      const checkbox = document.getElementById(`day-${day}`);
-      if (checkbox.checked) {
-        label.classList.add('strikethrough');
-      } else {
-        label.classList.remove('strikethrough');
-      }
-      // Save checkbox state to localStorage
-      localStorage.setItem(`day-${day}-checked`, checkbox.checked);
+    updateChart();
+  }
+
+  function toggleFulfillment(day) {
+    const checkbox = document.getElementById(`day-${day}`);
+    const label = document.getElementById(`label-${day}`);
+    const dayContainer = document.getElementById(`container-${day}`);
+
+    if (checkbox.checked) {
+      dayData[day - 1].fulfilled = true;
+      dayData[day - 1].crossed = false;
+      label.classList.remove('crossed-day');
+      label.classList.add('strikethrough');
+      dayContainer.classList.add('fulfilled');
+      dayContainer.classList.remove('crossed-day');
+    } else {
+      dayData[day - 1].fulfilled = false;
+      label.classList.remove('strikethrough');
+      dayContainer.classList.remove('fulfilled');
     }
 
-    // Load saved states from localStorage when the page loads
-    document.addEventListener("DOMContentLoaded", function () {
-      generateDays(); // Generate 80 days
+    saveDayData();
+    updateChart();
+  }
 
-      for (let i = 1; i <= 80; i++) {
-        const checkbox = document.getElementById(`day-${i}`);
-        const note = document.getElementById(`note-day-${i}`);
-        const label = document.getElementById(`label-${i}`);
+  function toggleCross(day) {
+    const checkbox = document.getElementById(`day-${day}`);
+    const label = document.getElementById(`label-${day}`);
+    const dayContainer = document.getElementById(`container-${day}`);
 
-        // Load checkbox state
-        const isChecked = localStorage.getItem(`day-${i}-checked`) === 'true';
-        if (checkbox) {
-          checkbox.checked = isChecked;
-          if (isChecked) {
-            label.classList.add('strikethrough');
+    if (!checkbox.checked) {
+      dayData[day - 1].crossed = true;
+      dayData[day - 1].fulfilled = false;
+      label.classList.add('crossed-day');
+      dayContainer.classList.add('crossed-day');
+      dayContainer.classList.remove('fulfilled');
+    } else {
+      dayData[day - 1].crossed = false;
+      label.classList.remove('crossed-day');
+      dayContainer.classList.remove('crossed-day');
+    }
+
+    saveDayData();
+    updateChart();
+  }
+
+  function saveDayData() {
+    for (let i = 0; i < 80; i++) {
+      const note = document.getElementById(`note-day-${i + 1}`).value;
+      dayData[i].note = note;
+    }
+
+    localStorage.setItem('dayData', JSON.stringify(dayData));
+  }
+
+  function updateChart() {
+    const ctx = document.getElementById('growthChart').getContext('2d');
+
+    const days = dayData.map(day => `Day ${day.id}`);
+    let cumulativeGrowth = 0;
+    const cumulativeData = dayData.map((day) => {
+      if (day.fulfilled) {
+        cumulativeGrowth += 1;
+      } else if (day.crossed) {
+        cumulativeGrowth -= 1;
+      }
+      return cumulativeGrowth;
+    });
+
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Growth/Downfall',
+          data: cumulativeData,
+          fill: false,
+          borderColor: cumulativeData.map(value => value >= 0 ? 'green' : 'red'),
+          borderWidth: 2,
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Days'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Growth/Downfall'
+            }
           }
         }
+      }
+    });
+  }
 
-        // Load note content
-        const savedNote = localStorage.getItem(`note-day-${i}`);
-        if (note && savedNote) {
-          note.value = savedNote;
-        }
+  function checkUnfulfilledDays() {
+    const currentDate = new Date();
+
+    dayData.forEach((day, index) => {
+      const dayDate = new Date();
+      dayDate.setDate(new Date().getDate() + index);
+
+      if (dayDate < currentDate && !day.fulfilled && !day.crossed) {
+        day.crossed = true;
       }
     });
 
-    // Save the states when any note is changed
-    document.addEventListener('input', function (event) {
-      const target = event.target;
+    saveDayData();
+    updateChart();
+  }
 
-      if (target.classList.contains('note')) {
-        const noteId = target.id;
-        localStorage.setItem(noteId, target.value);
-      }
-    });
-  </script>
+  function autoMarkCrossed() {
+    const now = new Date();
+    const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    setTimeout(function () {
+      checkUnfulfilledDays();
+      setInterval(checkUnfulfilledDays, 24 * 60 * 60 * 1000);
+    }, millisTillMidnight);
+  }
+
+  generateDays();
+  autoMarkCrossed();
+</script>
 </body>
 
 </html>
